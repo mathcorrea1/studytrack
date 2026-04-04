@@ -19,7 +19,7 @@ class InfoTile extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: colorScheme.primary.withOpacity(0.12),
+          backgroundColor: colorScheme.primary.withValues(alpha: 0.12),
           child: Icon(icon, color: colorScheme.primary),
         ),
         title: Text(label),

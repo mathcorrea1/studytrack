@@ -78,6 +78,31 @@ class StudyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateSubject({
+    required String subjectId,
+    required String name,
+    required String teacher,
+    required int studyHoursPerWeek,
+  }) {
+    final index = _subjects.indexWhere((subject) => subject.id == subjectId);
+    if (index == -1) {
+      return;
+    }
+
+    _subjects[index] = _subjects[index].copyWith(
+      name: name.trim(),
+      teacher: teacher.trim(),
+      studyHoursPerWeek: studyHoursPerWeek,
+    );
+    notifyListeners();
+  }
+
+  void deleteSubject(String subjectId) {
+    _subjects.removeWhere((subject) => subject.id == subjectId);
+    _tasks.removeWhere((task) => task.subjectId == subjectId);
+    notifyListeners();
+  }
+
   void addTask({
     required String subjectId,
     required String title,
@@ -92,6 +117,30 @@ class StudyProvider extends ChangeNotifier {
     );
 
     _tasks.add(task);
+    notifyListeners();
+  }
+
+  void updateTask({
+    required String taskId,
+    required String subjectId,
+    required String title,
+    required String description,
+  }) {
+    final index = _tasks.indexWhere((task) => task.id == taskId);
+    if (index == -1) {
+      return;
+    }
+
+    _tasks[index] = _tasks[index].copyWith(
+      subjectId: subjectId,
+      title: title.trim(),
+      description: description.trim(),
+    );
+    notifyListeners();
+  }
+
+  void deleteTask(String taskId) {
+    _tasks.removeWhere((task) => task.id == taskId);
     notifyListeners();
   }
 

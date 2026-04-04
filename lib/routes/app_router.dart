@@ -7,6 +7,8 @@ import 'package:studytrack/screens/auth/register_screen.dart';
 import 'package:studytrack/screens/home/home_screen.dart';
 import 'package:studytrack/screens/study/create_subject_screen.dart';
 import 'package:studytrack/screens/study/create_task_screen.dart';
+import 'package:studytrack/screens/study/edit_subject_screen.dart';
+import 'package:studytrack/screens/study/edit_task_screen.dart';
 import 'package:studytrack/screens/study/progress_screen.dart';
 import 'package:studytrack/screens/study/subject_list_screen.dart';
 import 'package:studytrack/screens/study/task_list_screen.dart';
@@ -28,10 +30,14 @@ class AppRouter {
         return _buildRoute(const AboutScreen(), settings);
       case AppRoutes.createSubject:
         return _buildRoute(const CreateSubjectScreen(), settings);
+      case AppRoutes.editSubject:
+        return _buildRoute(const EditSubjectScreen(), settings);
       case AppRoutes.subjectList:
         return _buildRoute(const SubjectListScreen(), settings);
       case AppRoutes.createTask:
         return _buildRoute(const CreateTaskScreen(), settings);
+      case AppRoutes.editTask:
+        return _buildRoute(const EditTaskScreen(), settings);
       case AppRoutes.taskList:
         return _buildRoute(const TaskListScreen(), settings);
       case AppRoutes.progress:

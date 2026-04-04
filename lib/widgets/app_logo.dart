@@ -11,16 +11,19 @@ class AppLogo extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 88,
-          height: 88,
+          width: 96,
+          height: 96,
           decoration: BoxDecoration(
-            color: colorScheme.primary.withOpacity(0.12),
+            color: colorScheme.primary.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(24),
           ),
-          child: Icon(
-            Icons.menu_book_rounded,
-            size: 42,
-            color: colorScheme.primary,
+          padding: const EdgeInsets.all(10),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.asset(
+              'assets/images/studytrack_logo.png',
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         const SizedBox(height: 16),

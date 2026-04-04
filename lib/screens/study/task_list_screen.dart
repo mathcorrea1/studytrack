@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:studytrack/core/constants/app_routes.dart';
 import 'package:studytrack/models/study_task.dart';
 import 'package:studytrack/providers/study_provider.dart';
 import 'package:studytrack/widgets/empty_state_card.dart';
@@ -51,6 +52,45 @@ class TaskListScreen extends StatelessWidget {
       );
   }
 
+  Future<void> _confirmDeleteTask(BuildContext context, StudyTask task) async {
+    final shouldDelete = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: const Text('Excluir tarefa'),
+              content: const Text(
+                'Deseja realmente excluir esta tarefa de estudo?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Excluir'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!shouldDelete || !context.mounted) {
+      return;
+    }
+
+    context.read<StudyProvider>().deleteTask(task.id);
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Tarefa excluida com sucesso.'),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final studyProvider = context.watch<StudyProvider>();
@@ -94,8 +134,8 @@ class TaskListScreen extends StatelessWidget {
                             contentPadding: const EdgeInsets.all(16),
                             leading: CircleAvatar(
                               backgroundColor: task.isCompleted
-                                  ? Colors.green.withOpacity(0.15)
-                                  : Colors.orange.withOpacity(0.15),
+                                  ? Colors.green.withValues(alpha: 0.15)
+                                  : Colors.orange.withValues(alpha: 0.15),
                               child: Icon(
                                 task.isCompleted
                                     ? Icons.check_rounded
@@ -132,12 +172,8 @@ class TaskListScreen extends StatelessWidget {
                               ),
                             ),
                             trailing: IconButton(
-                              onPressed: () => _toggleTask(context, task),
-                              icon: Icon(
-                                task.isCompleted
-                                    ? Icons.undo_rounded
-                                    : Icons.check_circle_outline_rounded,
-                              ),
+                              onPressed: () => _showTaskActions(context, task),
+                              icon: const Icon(Icons.more_vert_rounded),
                             ),
                           ),
                         );
@@ -149,5 +185,53 @@ class TaskListScreen extends StatelessWidget {
       ),
     );
   }
-}
 
+  Future<void> _showTaskActions(BuildContext context, StudyTask task) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  task.isCompleted
+                      ? Icons.undo_rounded
+                      : Icons.check_circle_outline_rounded,
+                ),
+                title: Text(
+                  task.isCompleted ? 'Reabrir tarefa' : 'Marcar como concluida',
+                ),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _toggleTask(context, task);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Editar tarefa'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.editTask,
+                    arguments: task,
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline_rounded),
+                title: const Text('Excluir tarefa'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _confirmDeleteTask(context, task);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}

@@ -26,7 +26,7 @@ class AboutScreen extends StatelessWidget {
             icon: Icons.flag_outlined,
           ),
           InfoTile(
-            label: 'Aluno',
+            label: 'Integrantes',
             value: AppConstants.studentName,
             icon: Icons.person_outline_rounded,
           ),
@@ -34,6 +34,16 @@ class AboutScreen extends StatelessWidget {
             label: 'Disciplina',
             value: AppConstants.courseName,
             icon: Icons.class_outlined,
+          ),
+          InfoTile(
+            label: 'Instituicao',
+            value: AppConstants.institutionName,
+            icon: Icons.account_balance_outlined,
+          ),
+          InfoTile(
+            label: 'Professor',
+            value: AppConstants.professorName,
+            icon: Icons.badge_outlined,
           ),
           InfoTile(
             label: 'Versao',
@@ -45,4 +55,3 @@ class AboutScreen extends StatelessWidget {
     );
   }
 }
-

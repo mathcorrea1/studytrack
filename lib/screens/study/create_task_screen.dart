@@ -101,7 +101,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                     child: Column(
                       children: [
                         DropdownButtonFormField<String>(
-                          value: _selectedSubjectId,
+                          initialValue: _selectedSubjectId,
                           decoration: const InputDecoration(
                             labelText: 'Materia',
                             prefixIcon: Icon(Icons.bookmarks_outlined),
@@ -148,4 +148,3 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     );
   }
 }
-

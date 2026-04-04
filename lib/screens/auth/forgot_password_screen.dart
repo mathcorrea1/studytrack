@@ -45,9 +45,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Recuperacao iniciada'),
+          content: Text(
+            'As instrucoes de redefinicao foram enviadas de forma simulada para ${_emailController.text.trim()}.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Entendi'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted) {
+      return;
+    }
+
     SnackBarUtils.show(
       context,
-      'Link de recuperacao enviado de forma simulada para o email informado.',
+      'Processo de recuperacao iniciado com sucesso.',
     );
     Navigator.pop(context);
   }
