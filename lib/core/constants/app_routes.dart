@@ -13,4 +13,8 @@ class AppRoutes {
   static const String editTask = '/study/edit-task';
   static const String taskList = '/study/tasks';
   static const String progress = '/study/progress';
+  static const String goals = '/study/goals';
+  static const String sessions = '/study/sessions';
+  static const String search = '/study/search';
+  static const String apiTips = '/study/api-tips';
 }

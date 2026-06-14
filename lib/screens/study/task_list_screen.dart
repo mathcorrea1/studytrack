@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:studytrack/core/constants/app_routes.dart';
+import 'package:studytrack/core/utils/snackbar_utils.dart';
 import 'package:studytrack/models/study_task.dart';
+import 'package:studytrack/models/subject.dart';
 import 'package:studytrack/providers/study_provider.dart';
 import 'package:studytrack/widgets/empty_state_card.dart';
 
@@ -37,19 +39,24 @@ class TaskListScreen extends StatelessWidget {
       return;
     }
 
-    context.read<StudyProvider>().toggleTaskCompletion(task.id);
+    try {
+      await context.read<StudyProvider>().toggleTaskCompletion(task);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      SnackBarUtils.show(context, error.toString(), isError: true);
+      return;
+    }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            task.isCompleted
-                ? 'Tarefa reaberta com sucesso.'
-                : 'Tarefa marcada como concluida.',
-          ),
-        ),
+    if (context.mounted) {
+      SnackBarUtils.show(
+        context,
+        task.isCompleted
+            ? 'Tarefa reaberta com sucesso.'
+            : 'Tarefa marcada como concluida.',
       );
+    }
   }
 
   Future<void> _confirmDeleteTask(BuildContext context, StudyTask task) async {
@@ -80,108 +87,141 @@ class TaskListScreen extends StatelessWidget {
       return;
     }
 
-    context.read<StudyProvider>().deleteTask(task.id);
+    try {
+      await context.read<StudyProvider>().deleteTask(task.id);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      SnackBarUtils.show(context, error.toString(), isError: true);
+      return;
+    }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('Tarefa excluida com sucesso.'),
-        ),
-      );
+    if (context.mounted) {
+      SnackBarUtils.show(context, 'Tarefa excluida com sucesso.');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final studyProvider = context.watch<StudyProvider>();
-    final tasks = studyProvider.visibleTasks;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tarefas de estudo')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Card(
-              child: SwitchListTile(
-                value: studyProvider.showOnlyPending,
-                onChanged: studyProvider.setShowOnlyPending,
-                title: const Text('Mostrar apenas pendentes'),
-                subtitle: const Text(
-                  'Use o filtro para focar no que ainda falta concluir.',
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: tasks.isEmpty
-                  ? const EmptyStateCard(
-                      icon: Icons.task_alt_outlined,
-                      title: 'Nenhuma tarefa encontrada',
-                      subtitle:
-                          'Crie novas tarefas ou desative o filtro de pendencias.',
-                    )
-                  : ListView.separated(
-                      itemCount: tasks.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final task = tasks[index];
-                        final subjectName =
-                            studyProvider.subjectNameById(task.subjectId);
+      body: StreamBuilder<List<Subject>>(
+        stream: studyProvider.subjectsStream(),
+        builder: (context, subjectSnapshot) {
+          return StreamBuilder<List<StudyTask>>(
+            stream: studyProvider.tasksStream(applyPendingFilter: true),
+            builder: (context, taskSnapshot) {
+              final isLoading = subjectSnapshot.connectionState ==
+                      ConnectionState.waiting ||
+                  taskSnapshot.connectionState == ConnectionState.waiting;
 
-                        return Card(
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: CircleAvatar(
-                              backgroundColor: task.isCompleted
-                                  ? Colors.green.withValues(alpha: 0.15)
-                                  : Colors.orange.withValues(alpha: 0.15),
-                              child: Icon(
-                                task.isCompleted
-                                    ? Icons.check_rounded
-                                    : Icons.schedule_rounded,
-                                color: task.isCompleted
-                                    ? Colors.green
-                                    : Colors.orange,
-                              ),
-                            ),
-                            title: Text(
-                              task.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                decoration: task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(task.description),
-                                  const SizedBox(height: 8),
-                                  Text('Materia: $subjectName'),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    task.isCompleted
-                                        ? 'Status: Concluida'
-                                        : 'Status: Pendente',
-                                  ),
-                                ],
-                              ),
-                            ),
-                            trailing: IconButton(
-                              onPressed: () => _showTaskActions(context, task),
-                              icon: const Icon(Icons.more_vert_rounded),
-                            ),
-                          ),
-                        );
-                      },
+              if (isLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final error = subjectSnapshot.error ?? taskSnapshot.error;
+              if (error != null) {
+                return Center(child: Text('Erro ao recuperar dados: $error'));
+              }
+
+              final subjects = subjectSnapshot.data ?? const <Subject>[];
+              final tasks = taskSnapshot.data ?? const <StudyTask>[];
+
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Card(
+                      child: SwitchListTile(
+                        value: studyProvider.showOnlyPending,
+                        onChanged: studyProvider.setShowOnlyPending,
+                        title: const Text('Mostrar apenas pendentes'),
+                        subtitle: const Text(
+                          'Use o filtro para focar no que ainda falta concluir.',
+                        ),
+                      ),
                     ),
-            ),
-          ],
-        ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: tasks.isEmpty
+                          ? const EmptyStateCard(
+                              icon: Icons.task_alt_outlined,
+                              title: 'Nenhuma tarefa encontrada',
+                              subtitle:
+                                  'Crie novas tarefas ou desative o filtro de pendencias.',
+                            )
+                          : ListView.separated(
+                              itemCount: tasks.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final task = tasks[index];
+                                final subjectName =
+                                    studyProvider.subjectNameById(
+                                  subjects,
+                                  task.subjectId,
+                                );
+
+                                return Card(
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
+                                    leading: CircleAvatar(
+                                      backgroundColor: task.isCompleted
+                                          ? Colors.green.withValues(alpha: 0.15)
+                                          : Colors.orange.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                      child: Icon(
+                                        task.isCompleted
+                                            ? Icons.check_rounded
+                                            : Icons.schedule_rounded,
+                                        color: task.isCompleted
+                                            ? Colors.green
+                                            : Colors.orange,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      task.title,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        decoration: task.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                      ),
+                                    ),
+                                    subtitle: Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(task.description),
+                                          const SizedBox(height: 8),
+                                          Text('Materia: $subjectName'),
+                                          Text('Prioridade: ${task.priority}'),
+                                          Text('Status: ${task.status}'),
+                                        ],
+                                      ),
+                                    ),
+                                    trailing: IconButton(
+                                      onPressed: () =>
+                                          _showTaskActions(context, task),
+                                      icon: const Icon(Icons.more_vert_rounded),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

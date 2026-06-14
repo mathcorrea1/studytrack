@@ -51,7 +51,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         return AlertDialog(
           title: const Text('Recuperacao iniciada'),
           content: Text(
-            'As instrucoes de redefinicao foram enviadas de forma simulada para ${_emailController.text.trim()}.',
+            'As instrucoes de redefinicao foram enviadas para ${_emailController.text.trim()}.',
           ),
           actions: [
             FilledButton(
@@ -69,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     SnackBarUtils.show(
       context,
-      'Processo de recuperacao iniciado com sucesso.',
+      'Email de recuperacao enviado com sucesso.',
     );
     Navigator.pop(context);
   }

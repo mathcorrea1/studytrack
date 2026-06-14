@@ -1,160 +1,139 @@
 import 'package:flutter/material.dart';
+import 'package:studytrack/models/study_goal.dart';
+import 'package:studytrack/models/study_session.dart';
 import 'package:studytrack/models/study_task.dart';
 import 'package:studytrack/models/subject.dart';
-import 'package:studytrack/services/mock_study_service.dart';
+import 'package:studytrack/services/study_service.dart';
 
 class StudyProvider extends ChangeNotifier {
-  StudyProvider(this._mockStudyService) {
-    _subjects = List<Subject>.from(_mockStudyService.getInitialSubjects());
-    _tasks = List<StudyTask>.from(_mockStudyService.getInitialTasks());
-  }
+  StudyProvider(this._studyService);
 
-  final MockStudyService _mockStudyService;
-
-  late final List<Subject> _subjects;
-  late final List<StudyTask> _tasks;
+  final StudyService _studyService;
   bool _showOnlyPending = false;
 
-  List<Subject> get subjects => List.unmodifiable(_subjects);
-  List<StudyTask> get allTasks => List.unmodifiable(_tasks);
   bool get showOnlyPending => _showOnlyPending;
 
-  List<StudyTask> get visibleTasks {
-    if (!_showOnlyPending) {
-      return List.unmodifiable(_tasks);
-    }
+  Stream<List<Subject>> subjectsStream() => _studyService.watchSubjects();
 
-    return List.unmodifiable(
-      _tasks.where((task) => !task.isCompleted),
+  Stream<List<StudyTask>> tasksStream({bool applyPendingFilter = false}) {
+    return _studyService.watchTasks(
+      onlyPending: applyPendingFilter && _showOnlyPending,
     );
   }
 
-  double get progress {
-    if (_tasks.isEmpty) {
-      return 0;
-    }
+  Stream<List<StudyGoal>> goalsStream() => _studyService.watchGoals();
 
-    final completedTasks = _tasks.where((task) => task.isCompleted).length;
-    return completedTasks / _tasks.length;
+  Stream<List<StudySession>> sessionsStream() => _studyService.watchSessions();
+
+  Stream<List<StudyTask>> searchTasks({
+    required String term,
+    required TaskSearchOrder order,
+  }) {
+    return _studyService.searchTasks(term: term, order: order);
   }
 
-  int get completedTasksCount =>
-      _tasks.where((task) => task.isCompleted).length;
-
-  int tasksCountForSubject(String subjectId) {
-    return _tasks.where((task) => task.subjectId == subjectId).length;
-  }
-
-  int completedTasksForSubject(String subjectId) {
-    return _tasks
-        .where(
-          (task) => task.subjectId == subjectId && task.isCompleted,
-        )
-        .length;
-  }
-
-  double progressForSubject(String subjectId) {
-    final totalTasks = tasksCountForSubject(subjectId);
-    if (totalTasks == 0) {
-      return 0;
-    }
-
-    return completedTasksForSubject(subjectId) / totalTasks;
-  }
-
-  void addSubject({
+  Future<void> addSubject({
     required String name,
     required String teacher,
     required int studyHoursPerWeek,
   }) {
-    final subject = Subject(
-      id: 'sub-${DateTime.now().millisecondsSinceEpoch}',
-      name: name.trim(),
-      teacher: teacher.trim(),
+    return _studyService.addSubject(
+      name: name,
+      teacher: teacher,
       studyHoursPerWeek: studyHoursPerWeek,
     );
-
-    _subjects.add(subject);
-    notifyListeners();
   }
 
-  void updateSubject({
+  Future<void> updateSubject({
     required String subjectId,
     required String name,
     required String teacher,
     required int studyHoursPerWeek,
   }) {
-    final index = _subjects.indexWhere((subject) => subject.id == subjectId);
-    if (index == -1) {
-      return;
-    }
-
-    _subjects[index] = _subjects[index].copyWith(
-      name: name.trim(),
-      teacher: teacher.trim(),
+    return _studyService.updateSubject(
+      subjectId: subjectId,
+      name: name,
+      teacher: teacher,
       studyHoursPerWeek: studyHoursPerWeek,
     );
-    notifyListeners();
   }
 
-  void deleteSubject(String subjectId) {
-    _subjects.removeWhere((subject) => subject.id == subjectId);
-    _tasks.removeWhere((task) => task.subjectId == subjectId);
-    notifyListeners();
+  Future<void> deleteSubject(String subjectId) {
+    return _studyService.deleteSubject(subjectId);
   }
 
-  void addTask({
+  Future<void> addTask({
     required String subjectId,
     required String title,
     required String description,
+    required String priority,
+    DateTime? dueDate,
   }) {
-    final task = StudyTask(
-      id: 'task-${DateTime.now().millisecondsSinceEpoch}',
+    return _studyService.addTask(
       subjectId: subjectId,
-      title: title.trim(),
-      description: description.trim(),
-      isCompleted: false,
+      title: title,
+      description: description,
+      priority: priority,
+      dueDate: dueDate,
     );
-
-    _tasks.add(task);
-    notifyListeners();
   }
 
-  void updateTask({
+  Future<void> updateTask({
     required String taskId,
     required String subjectId,
     required String title,
     required String description,
+    required bool isCompleted,
+    required String priority,
+    DateTime? dueDate,
   }) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-    if (index == -1) {
-      return;
-    }
-
-    _tasks[index] = _tasks[index].copyWith(
+    return _studyService.updateTask(
+      taskId: taskId,
       subjectId: subjectId,
-      title: title.trim(),
-      description: description.trim(),
+      title: title,
+      description: description,
+      isCompleted: isCompleted,
+      priority: priority,
+      dueDate: dueDate,
     );
-    notifyListeners();
   }
 
-  void deleteTask(String taskId) {
-    _tasks.removeWhere((task) => task.id == taskId);
-    notifyListeners();
+  Future<void> deleteTask(String taskId) {
+    return _studyService.deleteTask(taskId);
   }
 
-  void toggleTaskCompletion(String taskId) {
-    final index = _tasks.indexWhere((task) => task.id == taskId);
-    if (index == -1) {
-      return;
-    }
+  Future<void> toggleTaskCompletion(StudyTask task) {
+    return _studyService.toggleTaskCompletion(task);
+  }
 
-    final selectedTask = _tasks[index];
-    _tasks[index] = selectedTask.copyWith(
-      isCompleted: !selectedTask.isCompleted,
+  Future<void> addGoal({
+    required String title,
+    required String description,
+    required int targetHours,
+    required DateTime deadline,
+  }) {
+    return _studyService.addGoal(
+      title: title,
+      description: description,
+      targetHours: targetHours,
+      deadline: deadline,
     );
-    notifyListeners();
+  }
+
+  Future<void> addSession({
+    required String subjectId,
+    required String title,
+    required int minutes,
+    required int focusScore,
+    required String notes,
+  }) {
+    return _studyService.addSession(
+      subjectId: subjectId,
+      title: title,
+      minutes: minutes,
+      focusScore: focusScore,
+      notes: notes,
+    );
   }
 
   void setShowOnlyPending(bool value) {
@@ -162,8 +141,37 @@ class StudyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  String subjectNameById(String subjectId) {
-    return _subjects
+  int completedTasksCount(List<StudyTask> tasks) {
+    return tasks.where((task) => task.isCompleted).length;
+  }
+
+  double progress(List<StudyTask> tasks) {
+    if (tasks.isEmpty) {
+      return 0;
+    }
+    return completedTasksCount(tasks) / tasks.length;
+  }
+
+  int tasksCountForSubject(List<StudyTask> tasks, String subjectId) {
+    return tasks.where((task) => task.subjectId == subjectId).length;
+  }
+
+  int completedTasksForSubject(List<StudyTask> tasks, String subjectId) {
+    return tasks
+        .where((task) => task.subjectId == subjectId && task.isCompleted)
+        .length;
+  }
+
+  double progressForSubject(List<StudyTask> tasks, String subjectId) {
+    final totalTasks = tasksCountForSubject(tasks, subjectId);
+    if (totalTasks == 0) {
+      return 0;
+    }
+    return completedTasksForSubject(tasks, subjectId) / totalTasks;
+  }
+
+  String subjectNameById(List<Subject> subjects, String subjectId) {
+    return subjects
         .firstWhere(
           (subject) => subject.id == subjectId,
           orElse: () => const Subject(

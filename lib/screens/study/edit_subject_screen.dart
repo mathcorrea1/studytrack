@@ -20,6 +20,7 @@ class _EditSubjectScreenState extends State<EditSubjectScreen> {
   final _hoursController = TextEditingController();
   Subject? _subject;
   bool _initialized = false;
+  bool _isSaving = false;
 
   @override
   void didChangeDependencies() {
@@ -46,7 +47,7 @@ class _EditSubjectScreenState extends State<EditSubjectScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     if (_subject == null) {
       SnackBarUtils.show(context, 'Materia nao encontrada.', isError: true);
       return;
@@ -75,12 +76,26 @@ class _EditSubjectScreenState extends State<EditSubjectScreen> {
       return;
     }
 
-    context.read<StudyProvider>().updateSubject(
-          subjectId: _subject!.id,
-          name: _nameController.text,
-          teacher: _teacherController.text,
-          studyHoursPerWeek: studyHours,
-        );
+    setState(() => _isSaving = true);
+    try {
+      await context.read<StudyProvider>().updateSubject(
+            subjectId: _subject!.id,
+            name: _nameController.text,
+            teacher: _teacherController.text,
+            studyHoursPerWeek: studyHours,
+          );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      SnackBarUtils.show(context, error.toString(), isError: true);
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
 
     SnackBarUtils.show(context, 'Materia atualizada com sucesso.');
     Navigator.pop(context);
@@ -119,6 +134,7 @@ class _EditSubjectScreenState extends State<EditSubjectScreen> {
                 PrimaryButton(
                   label: 'Salvar alteracoes',
                   icon: Icons.edit_note_rounded,
+                  isLoading: _isSaving,
                   onPressed: _handleSave,
                 ),
               ],

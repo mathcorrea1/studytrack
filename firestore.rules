@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsIncomingData() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function ownsExistingData() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /usuarios/{userId} {
+      allow read, create, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    match /materias/{documentId} {
+      allow create: if ownsIncomingData();
+      allow read, update, delete: if ownsExistingData();
+    }
+
+    match /tarefas/{documentId} {
+      allow create: if ownsIncomingData();
+      allow read, update, delete: if ownsExistingData();
+    }
+
+    match /metas_estudo/{documentId} {
+      allow create: if ownsIncomingData();
+      allow read, update, delete: if ownsExistingData();
+    }
+
+    match /sessoes_estudo/{documentId} {
+      allow create: if ownsIncomingData();
+      allow read, update, delete: if ownsExistingData();
+    }
+  }
+}

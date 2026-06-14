@@ -29,8 +29,26 @@ class AppValidators {
       return requiredValidation;
     }
 
-    if (value!.trim().length < 6) {
-      return 'A senha deve ter pelo menos 6 caracteres.';
+    final password = value!.trim();
+
+    if (password.length < 8) {
+      return 'A senha deve ter pelo menos 8 caracteres.';
+    }
+
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      return 'A senha deve ter pelo menos uma letra maiuscula.';
+    }
+
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      return 'A senha deve ter pelo menos uma letra minuscula.';
+    }
+
+    if (!RegExp(r'\d').hasMatch(password)) {
+      return 'A senha deve ter pelo menos um numero.';
+    }
+
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];~`]').hasMatch(password)) {
+      return 'A senha deve ter pelo menos um caractere especial.';
     }
 
     return null;

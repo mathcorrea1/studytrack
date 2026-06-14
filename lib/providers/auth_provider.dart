@@ -3,7 +3,9 @@ import 'package:studytrack/models/app_user.dart';
 import 'package:studytrack/services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
-  AuthProvider(this._authService);
+  AuthProvider(this._authService) {
+    _loadCurrentUser();
+  }
 
   final AuthService _authService;
 
@@ -13,6 +15,15 @@ class AuthProvider extends ChangeNotifier {
   AppUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
   bool get isLoading => _isLoading;
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      _currentUser = await _authService.currentAppUser();
+      notifyListeners();
+    } catch (_) {
+      _currentUser = null;
+    }
+  }
 
   Future<void> login({
     required String email,
@@ -39,16 +50,11 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
-      await _authService.register(
+      _currentUser = await _authService.register(
         name: name,
         email: email,
         phone: phone,
         password: password,
-      );
-      _currentUser = AppUser(
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
       );
     } finally {
       _setLoading(false);
@@ -65,7 +71,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _authService.logout();
     _currentUser = null;
     notifyListeners();
   }

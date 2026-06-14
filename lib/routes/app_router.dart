@@ -9,7 +9,11 @@ import 'package:studytrack/screens/study/create_subject_screen.dart';
 import 'package:studytrack/screens/study/create_task_screen.dart';
 import 'package:studytrack/screens/study/edit_subject_screen.dart';
 import 'package:studytrack/screens/study/edit_task_screen.dart';
+import 'package:studytrack/screens/study/book_api_screen.dart';
+import 'package:studytrack/screens/study/goals_screen.dart';
 import 'package:studytrack/screens/study/progress_screen.dart';
+import 'package:studytrack/screens/study/search_screen.dart';
+import 'package:studytrack/screens/study/sessions_screen.dart';
 import 'package:studytrack/screens/study/subject_list_screen.dart';
 import 'package:studytrack/screens/study/task_list_screen.dart';
 
@@ -42,6 +46,14 @@ class AppRouter {
         return _buildRoute(const TaskListScreen(), settings);
       case AppRoutes.progress:
         return _buildRoute(const ProgressScreen(), settings);
+      case AppRoutes.goals:
+        return _buildRoute(const GoalsScreen(), settings);
+      case AppRoutes.sessions:
+        return _buildRoute(const SessionsScreen(), settings);
+      case AppRoutes.search:
+        return _buildRoute(const SearchScreen(), settings);
+      case AppRoutes.apiTips:
+        return _buildRoute(const BookApiScreen(), settings);
       default:
         return _buildRoute(const LoginScreen(), settings);
     }

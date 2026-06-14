@@ -18,6 +18,7 @@ class _CreateSubjectScreenState extends State<CreateSubjectScreen> {
   final _nameController = TextEditingController();
   final _teacherController = TextEditingController();
   final _hoursController = TextEditingController();
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -27,7 +28,7 @@ class _CreateSubjectScreenState extends State<CreateSubjectScreen> {
     super.dispose();
   }
 
-  void _handleCreateSubject() {
+  Future<void> _handleCreateSubject() async {
     final errorMessage =
         AppValidators.requiredField(_nameController.text, 'nome da materia') ??
             AppValidators.requiredField(
@@ -51,11 +52,25 @@ class _CreateSubjectScreenState extends State<CreateSubjectScreen> {
       return;
     }
 
-    context.read<StudyProvider>().addSubject(
-          name: _nameController.text,
-          teacher: _teacherController.text,
-          studyHoursPerWeek: studyHours,
-        );
+    setState(() => _isSaving = true);
+    try {
+      await context.read<StudyProvider>().addSubject(
+            name: _nameController.text,
+            teacher: _teacherController.text,
+            studyHoursPerWeek: studyHours,
+          );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      SnackBarUtils.show(context, error.toString(), isError: true);
+      setState(() => _isSaving = false);
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
 
     SnackBarUtils.show(context, 'Materia criada com sucesso.');
     Navigator.pushReplacementNamed(context, AppRoutes.subjectList);
@@ -94,6 +109,7 @@ class _CreateSubjectScreenState extends State<CreateSubjectScreen> {
                 PrimaryButton(
                   label: 'Salvar materia',
                   icon: Icons.save_outlined,
+                  isLoading: _isSaving,
                   onPressed: _handleCreateSubject,
                 ),
               ],
