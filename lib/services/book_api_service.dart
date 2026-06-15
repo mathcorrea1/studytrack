@@ -9,10 +9,20 @@ class BookApiService {
   final http.Client _client;
 
   Future<List<BookSuggestion>> searchStudyBooks(String query) async {
+    final normalizedQuery = query.trim().isEmpty ? 'study skills' : query.trim();
+    final books = await _fetchBooks(normalizedQuery);
+
+    if (books.isNotEmpty || normalizedQuery == 'study skills') {
+      return books;
+    }
+
+    return _fetchBooks('study skills');
+  }
+
+  Future<List<BookSuggestion>> _fetchBooks(String query) async {
     final uri = Uri.https('openlibrary.org', '/search.json', {
-      'q': query.trim().isEmpty ? 'study skills' : query.trim(),
+      'q': query,
       'limit': '12',
-      'language': 'por,eng',
     });
 
     final response = await _client.get(uri);
